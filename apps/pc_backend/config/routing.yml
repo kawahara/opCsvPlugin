@@ -1,0 +1,31 @@
+op_csv_plugin_export:
+  url:  /opCsvPlugin/export
+  param: { module: opCsvPlugin, action: export }
+
+op_csv_plugin_import:
+  url:  /opCsvPlugin/import
+  param: { module: opCsvPlugin, action: import }
+
+op_csv_plugin_generate_export_data:
+  url:  /opCsvPlugin/generateExportData/:token
+  class: sfRequestRoute
+  param: { module: opCsvPlugin, action: generateExportData }
+  requirements: { sf_method: [post] }
+
+op_csv_plugin_export_download:
+  url:  /opCsvPlugin/download/:token/:filename.csv
+  class: sfRequestRoute
+  param: { module: opCsvPlugin, action: download }
+  requirements: { sf_method: [get] }
+
+op_csv_plugin_import_file:
+  url: /opCsvPlugin/importFile
+  class: sfRequestRoute
+  param: { module: opCsvPlugin, action: importFile }
+  requirements: { sf_method: [post] }
+
+op_csv_plugin_import_data:
+  url: /opCsvPlugin/importData/:token
+  class: sfRequestRoute
+  param: { module: opCsvPlugin, action: importData }
+  requirements: { sf_method: [post], range: "\d-\d" }
