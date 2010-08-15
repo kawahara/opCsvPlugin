@@ -9,6 +9,10 @@ class opCsvPluginImportMember
       'nickname',
       'mail_address|pc_mail_address|mobile_mail_address',
       'password',
+    ),
+    $uniqueMemberConfigFields = array(
+      'pc_address',
+      'mobile_address',
     );
 
   static protected
@@ -43,7 +47,7 @@ class opCsvPluginImportMember
 
       if ($field['is_profile'])
       {
-        // TODO: import profile
+        //TODO: import profile
 
         continue;
       }
@@ -92,13 +96,27 @@ class opCsvPluginImportMember
           $memberConfigs['password'] = $validator->clean($record);
           break;
       }
+    }
 
-      // TODO: メールアドレス重複チェック
-      $member->save();
-      foreach ($memberConfigs as $key => $value)
+    // check unique for member config
+    foreach ($this->uniqueMemberConfigFields as $name)
+    {
+      if (
+        isset($memberConfigs[$name]) &&
+        Doctrine::getTable('MemberConfig')->retrieveByNameAndValue($name, $memberConfigs[$name])
+      )
       {
-        $member->setConfig($key, $value);
+        throw new RuntimeException();
       }
+    }
+
+    $member->save();
+    foreach ($memberConfigs as $key => $value)
+    {
+      $member->setConfig($key, $value);
+    }
+    foreach ($memberProfiles as $key => $value)
+    {
     }
   }
 
@@ -189,18 +207,26 @@ class opCsvPluginImportMember
       }
     }
 
+    $errors = array();
     for (; $i < $end; $i++)
     {
       if ($data = fgetcsv($this->fp, self::$GETLEN))
       {
-        $this->save($data);
+        try
+        {
+          $this->save($data);
+        }
+        catch (Exception $e)
+        {
+          $errors[] = 'Line'.($i+1).' '.$e->getMessage();
+        }
       }
       else
       {
-        return array('status' => 'COMPLETE');
+        return array('status' => 'COMPLETE', 'msgs' => $errors);
       }
     }
 
-    return array('status' => 'CONTINUE');
+    return array('status' => 'CONTINUE', 'msgs' => $errors);
   }
 }

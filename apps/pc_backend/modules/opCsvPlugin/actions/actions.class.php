@@ -49,6 +49,7 @@ class opCsvPluginActions extends sfActions
   */
   public function executeExport(sfWebRequest $request)
   {
+    // NOTE: This action is not implemented now.
     $this->token = opToolkit::getRandom(16);
   }
 
