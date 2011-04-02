@@ -2,6 +2,18 @@
 
 class opCsvPluginActions extends sfActions
 {
+  protected function getRandom($length)
+  {
+    if (is_callable(array('opToolkit', 'getRandom')))
+    {
+      // for OpenPNE3.6 <=
+      return opToolkit::getRandom($length);
+    }
+
+    mt_srand();
+    return substr(md5(mt_rand()), 0, $length);
+  }
+
   protected function renderJSON($data)
   {
     $this->getResponse()->setContentType('application/json');
@@ -50,7 +62,7 @@ class opCsvPluginActions extends sfActions
   public function executeExport(sfWebRequest $request)
   {
     // NOTE: This action is not implemented now.
-    $this->token = opToolkit::getRandom(16);
+    $this->token = $this->getRandom(16);
   }
 
 
@@ -98,7 +110,7 @@ class opCsvPluginActions extends sfActions
     $this->form->bind($request->getParameter('import'), $request->getFiles('import'));
     if ($this->form->isValid())
     {
-      $this->token = opToolkit::getRandom(16);
+      $this->token = $this->getRandom(16);
       $validatedFile = $this->form->getValue('file');
       $dir = sfConfig::get('sf_app_cache_dir').DIRECTORY_SEPARATOR.'plugins'.DIRECTORY_SEPARATOR.'opCsvPlugin';
       $validatedFile->save($dir.DIRECTORY_SEPARATOR.$this->token.'tmp.csv');
