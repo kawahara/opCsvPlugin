@@ -26,17 +26,18 @@ Event.observe(window, 'load', function(event){
     new Effect.Fade(loading_alert);
   }
 
-  var console = function (msg, level) {
+  var output = function (msg, level) {
     status_box.innerHTML += '<div>' + msg + '</div>'
   }
 
-  var consoleMsgs = function (msg, level, resJSON) {
+  var outputMsgs = function (msg, level, resJSON) {
     if ('msgs' in resJSON) {
-      for (resJSON.msgs in key) {
-        console(resJSON[key].escapeHTML(), 'info');
+      for (var i = 0; i < resJSON.msgs.length; i++)
+      {
+        output(resJSON.msgs[i].escapeHTML(), 'info');
       }
     }
-    console(msg, level);
+    output(msg, level);
   }
 
   var onComplete = function (response) {
@@ -45,25 +46,25 @@ Event.observe(window, 'load', function(event){
       var res = response.responseJSON;
       if (res !== null && 'status' in res) {
         if (res.status === 'COMPLETE') {
-          consoleMsgs('Complate!', 'info', res);
+          outputMsgs('Complate!', 'info', res);
           hideLoading();
         } else if (res.status === 'CONTINUE') {
-          consoleMsgs('...', 'info', res);
+          outputMsgs('...', 'info', res);
           req();
         } else {
           if ('msg' in res) {
-            console('Error: ' + res.msg.escapeHTML(), 'error');
+            output('Error: ' + res.msg.escapeHTML(), 'error');
           } else {
-            console('Error', 'error');
+            output('Error', 'error');
           }
           hideLoading();
         }
       } else {
-        console('Error: Bad response', 'error');
+        output('Error: Bad response', 'error');
         hideLoading();
       }
     } else {
-      console('Error: ' + response.status, 'error');
+      output('Error: ' + response.status, 'error');
       hideLoading();
     }
   }

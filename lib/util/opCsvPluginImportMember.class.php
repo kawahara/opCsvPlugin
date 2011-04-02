@@ -1,5 +1,9 @@
 <?php
 
+class opCsvPluginImportException extends opCsvPluginException
+{
+}
+
 class opCsvPluginImportMember
 {
   protected
@@ -41,60 +45,63 @@ class opCsvPluginImportMember
     $memberConfigs  = array();
     $memberProfiles = array();
 
-    foreach ($data as $key => $record)
+    foreach ($data as $key => $col)
     {
       $field = $this->fields[$key];
 
       if ($field['is_profile'])
       {
-        //TODO: import profile
+        $validator = $field['validator'];
+        $memberProfiles[$field['name']] = $validator->clean($col);
 
         continue;
       }
-
-      switch ($field['name'])
+      else
       {
-        case "nickname" :
-          $validator = new opValidatorString(array('max_length' => 64, 'trim' => true, 'required' => true));
-          $member->name = $validator->clean($record);
+        switch ($field['name'])
+        {
+          case "nickname" :
+            $validator = new opValidatorString(array('max_length' => 64, 'trim' => true, 'required' => true));
+            $member->name = $validator->clean($col);
 
-          break;
-        case "mail_address" :
-          $validator = new sfValidatorEmail(array('trim' => true, 'required' => true));
-          $address = $validator->clean($record);
-          if (opToolkit::isMobileEmailAddress($address))
-          {
+            break;
+          case "mail_address" :
+            $validator = new sfValidatorEmail(array('trim' => true, 'required' => true));
+            $address = $validator->clean($col);
+            if (opToolkit::isMobileEmailAddress($address))
+            {
+              $memberConfigs['mobile_address'] = $address;
+            }
+
+            $memberConfigs['pc_address'] = $address;
+
+            break;
+          case "pc_mail_address" :
+            $validator = new sfValidatorEmail(array('trim' => true, 'required' => true));
+            $address = $validator->clean($col);
+            if (opToolkit::isMobileEmailAddress($address))
+            {
+              throw new opCsvPluginImportException("'pc_mail_address' is mobile address.");
+            }
+
+            $memberConfigs['pc_address'] = $address;
+
+            break;
+          case "mobile_mail_address" :
+            $validator = new sfValidatorEmail(array('trim' => true, 'required' => true));
+            $address = $validator->clean($col);
+            if (!opToolkit::isMobileEmailAddress($address))
+            {
+              throw new opCsvPluginImportException("'mobile_mail_address' is not support mobile address.");
+            }
             $memberConfigs['mobile_address'] = $address;
-          }
 
-          $memberConfigs['pc_address'] = $address;
-
-          break;
-        case "pc_mail_address" :
-          $validator = new sfValidatorEmail(array('trim' => true, 'required' => true));
-          $address = $validator->clean($record);
-          if (opToolkit::isMobileEmailAddress($address))
-          {
-            throw new RuntimeException();
-          }
-
-          $memberConfigs['pc_address'] = $address;
-
-          break;
-        case "mobile_mail_address" :
-          $validator = new sfValidatorEmail(array('trim' => true, 'required' => true));
-          $address = $validator->clean($record);
-          if (!opToolkit::isMobileEmailAddress($address))
-          {
-            throw new RuntimeException();
-          }
-          $memberConfigs['mobile_address'] = $address;
-
-          break;
-        case "password" :
-          $validator = new sfValidatorPassword(array('trim' => true, 'required' => true));
-          $memberConfigs['password'] = $validator->clean($record);
-          break;
+            break;
+          case "password" :
+            $validator = new sfValidatorPassword(array('trim' => true, 'required' => true));
+            $memberConfigs['password'] = $validator->clean($col);
+            break;
+        }
       }
     }
 
@@ -106,10 +113,11 @@ class opCsvPluginImportMember
         Doctrine::getTable('MemberConfig')->retrieveByNameAndValue($name, $memberConfigs[$name])
       )
       {
-        throw new RuntimeException();
+        throw new opCsvPluginImportException("'".$name."' duplicated.");
       }
     }
 
+    $member->setIsActive(true);
     $member->save();
     foreach ($memberConfigs as $key => $value)
     {
@@ -117,6 +125,7 @@ class opCsvPluginImportMember
     }
     foreach ($memberProfiles as $key => $value)
     {
+      $profile = $this->field[$key]['profile'];
     }
   }
 
@@ -163,7 +172,27 @@ class opCsvPluginImportMember
     {
       if (preg_match('/^profile\[(.*)\]$/', $field, $match))
       {
-        $clean[$key] = array('is_profile' => true, 'name' => $match[1]);
+        $object = Doctrine::getTable('Profile')->findOneByName($match[1]);
+        if (!$object)
+        {
+          throw new RuntimeException('Unknown profile field.');
+        }
+        if ($object->isMultipleSelect())
+        {
+          throw new RuntimeException('Unsported profile item of date and checkbox.');
+        }
+        $choices = array();
+        if ($object->isSingleSelect())
+        {
+          $profileOptions = Doctrine::getTable('ProfileOption')->retrieveByProfileId($object->getId());
+          foreach ($profileOptions as $option)
+          {
+            $choices[] = $object->getId();
+          }
+        }
+        $validator = opFormItemGenerator::generateValidator($object->getValueType(), $choices);
+
+        $clean[$key] = array('is_profile' => true, 'name' => $match[1], 'object' => $object, 'validator' => $validator);
         continue;
       }
 
@@ -191,7 +220,7 @@ class opCsvPluginImportMember
     {
       $this->bindFields($data);
     }
-    catch (RuntimeException $e)
+    catch (opCsvPluginImportException $e)
     {
       return array('status' => 'ERROR' , 'msg' => 'Fields is invalid.');
     }
