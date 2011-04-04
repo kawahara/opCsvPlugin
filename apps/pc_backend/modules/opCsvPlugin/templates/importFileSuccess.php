@@ -46,7 +46,7 @@ Event.observe(window, 'load', function(event){
       var res = response.responseJSON;
       if (res !== null && 'status' in res) {
         if (res.status === 'COMPLETE') {
-          outputMsgs('Complate!', 'info', res);
+          outputMsgs('Complete!', 'info', res);
           hideLoading();
         } else if (res.status === 'CONTINUE') {
           outputMsgs('...', 'info', res);
