@@ -1,0 +1,16 @@
+== Installation
+
+Put this plugin in the "plugin" folder of your OpenPNE project like following:
+
+1. cd ${YOUR_PROJECT_ROOT}/plugins
+
+2. git clone https://github.com/kawahara/opCsvPlugin.git
+
+To check the installation is success, visit the plugins configuration page in the admin page. If you can find the row including opCsvPlugin, the installation is successfully done.
+
+== Usage
+
+1. Visit opCsvPlugin configuration page.
+http://your.sight.com/pc_backend.php/opCsvPlugin
+
+2. Choose your csv file, and click the import button. The format is compatible with OpenPNE2 CSV file. You can check the sample csv file in the root directory of this plugin as well.
