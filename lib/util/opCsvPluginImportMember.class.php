@@ -1,13 +1,15 @@
 <?php
 
-class opCsvPluginImportException extends opCsvPluginException
-{
-}
-
-class opCsvPluginImportMember
+/**
+ * This class implement method to import member's information.
+ *
+ * @package    opCsvPlugin
+ * @subpackage util
+ * @author     Shogo Kawahara <kawahara@bucyou.net>
+ */
+class opCsvPluginImportMember extends opCsvPluginImportBase
 {
   protected
-    $fp = null,
     $fields = null,
     $requireFields = array(
       'nickname',
@@ -18,22 +20,6 @@ class opCsvPluginImportMember
       'pc_address',
       'mobile_address',
     );
-
-  static protected
-    $GETLEN = 4096;
-
-  public function __construct($file)
-  {
-    if (!($this->fp = fopen($file, 'r')))
-    {
-      throw new sfFileException();
-    }
-  }
-
-  public function __destruct()
-  {
-    fclose($this->fp);
-  }
 
   protected function save($data)
   {
